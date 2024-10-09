@@ -1,0 +1,142 @@
+# Screen dimensions
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+YELLOW = (255, 255, 0)
+
+# Fat Casoh character settings
+CASOH_WIDTH = 50
+CASOH_HEIGHT = 50
+CASOH_SPEED = 3
+
+# Set up the display
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Fat Casoh's Maze Adventure")
+
+# Define clock for framerate control
+clock = pygame.time.Clock()
+
+# Load images (for demonstration, using colored rectangles)
+# You can replace these with sprites or images
+casoh_image = pygame.Surface((CASOH_WIDTH, CASOH_HEIGHT))
+casoh_image.fill(YELLOW)
+
+# Maze walls (just as a starting example)
+walls = [
+    pygame.Rect(100, 100, 600, 20),
+    pygame.Rect(100, 200, 20, 300),
+    pygame.Rect(200, 500, 400, 20),
+    pygame.Rect(700, 100, 20, 400)
+]
+
+# Define collectibles (e.g., food orbs)
+collectibles = [pygame.Rect(random.randint(100, 700), random.randint(100, 500), 20, 20) for _ in range(5)]
+
+# Casoh character
+class Casoh(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = casoh_image
+        self.rect = self.image.get_rect()
+        self.rect.x = 50
+        self.rect.y = 50
+        self.speed_x = 0
+        self.speed_y = 0
+
+    def update(self):
+        self.rect.x += self.speed_x
+        self.rect.y += self.speed_y
+
+        # Keep Casoh within the screen boundaries
+        if self.rect.left < 0:
+            self.rect.left = 0
+        if self.rect.right > SCREEN_WIDTH:
+            self.rect.right = SCREEN_WIDTH
+        if self.rect.top < 0:
+            self.rect.top = 0
+        if self.rect.bottom > SCREEN_HEIGHT:
+            self.rect.bottom = SCREEN_HEIGHT
+
+        # Collisions with walls
+        for wall in walls:
+            if self.rect.colliderect(wall):
+                # Simple collision handling (push back on collision)
+                if self.speed_x > 0:  # Moving right
+                    self.rect.right = wall.left
+                if self.speed_x < 0:  # Moving left
+                    self.rect.left = wall.right
+                if self.speed_y > 0:  # Moving down
+                    self.rect.bottom = wall.top
+                if self.speed_y < 0:  # Moving up
+                    self.rect.top = wall.bottom
+
+# Function to display the maze and collectibles
+def draw_maze():
+    # Draw walls
+    for wall in walls:
+        pygame.draw.rect(screen, BLACK, wall)
+
+    # Draw collectibles
+    for collectible in collectibles:
+        pygame.draw.rect(screen, RED, collectible)
+
+# Function to handle collecting food
+def collect_items(player, items):
+    for item in items:
+        if player.rect.colliderect(item):
+            items.remove(item)  # Remove the collected item
+            return True
+    return False
+
+# Create a Casoh instance
+casoh = Casoh()
+
+# Main game loop
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+        # Movement controls
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT:
+                casoh.speed_x = -CASOH_SPEED
+            if event.key == pygame.K_RIGHT:
+                casoh.speed_x = CASOH_SPEED
+            if event.key == pygame.K_UP:
+                casoh.speed_y = -CASOH_SPEED
+            if event.key == pygame.K_DOWN:
+                casoh.speed_y = CASOH_SPEED
+
+        if event.type == pygame.KEYUP:
+            if event.key in [pygame.K_LEFT, pygame.K_RIGHT]:
+                casoh.speed_x = 0
+            if event.key in [pygame.K_UP, pygame.K_DOWN]:
+                casoh.speed_y = 0
+
+    # Update Casoh's position
+    casoh.update()
+
+    # Check for item collection
+    if collect_items(casoh, collectibles):
+        print("Collected an item!")
+
+    # Fill the screen with white background
+    screen.fill(WHITE)
+
+    # Draw the maze and collectibles
+    draw_maze()
+
+    # Draw Casoh
+    screen.blit(casoh.image, casoh.rect)
+
+    # Refresh the screen
+    pygame.display.flip()
+
+    # Set the frame rate
+    clock.tick(60)
